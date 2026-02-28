@@ -29,10 +29,11 @@ export function StartScreen({ onStart }: StartScreenProps) {
         <div>
           <h1 className="font-display text-6xl tracking-wider text-primary md:text-8xl">DEEP SEA</h1>
           <h2 className="font-display text-4xl tracking-wider text-accent md:text-6xl">ESCAPE</h2>
+          <p className="mt-1 font-body text-xs text-destructive">🧟 The dead walk. The ocean is your only hope.</p>
         </div>
 
         <p className="max-w-md font-body text-sm text-muted-foreground">
-          Navigate the depths, discover 8 hidden creatures, manage your oxygen, and defeat the Leviathan lurking in the abyss.
+          Escape the zombie apocalypse! Dive deep, discover 8 hidden creatures, survive the water pressure, and defeat the Leviathan lurking in the abyss.
         </p>
 
         <div className="grid grid-cols-2 gap-3 rounded-xl bg-background/30 p-4 backdrop-blur-sm">
@@ -46,7 +47,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
             <kbd className="rounded bg-muted px-2 py-0.5 font-bold">SPACE</kbd> Torpedo
           </div>
           <div className="flex items-center gap-2 font-body text-xs text-foreground">
-            🫧 Manage O₂
+            ❤️ Survive!
           </div>
         </div>
 
@@ -59,7 +60,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
         </button>
 
         <p className="font-body text-xs text-muted-foreground">
-          8 creatures hidden across 4 ocean zones · 🐉 Leviathan boss in the abyss
+          🧟 Escape the apocalypse · 8 creatures · 🐉 Leviathan boss in the abyss
         </p>
       </div>
     </div>
@@ -77,7 +78,7 @@ export function GameOverScreen({ state, onRestart }: GameOverScreenProps) {
       <div className="animate-pop-in flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-destructive/30 bg-card p-8 text-center"
         style={{ boxShadow: '0 0 60px hsla(0, 70%, 55%, 0.2)' }}>
         <span className="text-5xl">💀</span>
-        <h2 className="font-display text-3xl text-destructive">OXYGEN DEPLETED</h2>
+        <h2 className="font-display text-3xl text-destructive">HEALTH DEPLETED</h2>
         <p className="font-body text-sm text-muted-foreground">
           You discovered {state.discovered.length} of 8 creatures
         </p>
