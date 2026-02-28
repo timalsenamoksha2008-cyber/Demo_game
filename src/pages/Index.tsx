@@ -1,14 +1,101 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect, useRef, useState, useCallback } from 'react';
+import Phaser from 'phaser';
+import OceanScene, { GameState } from '@/game/OceanScene';
+import GameHUD from '@/components/GameHUD';
+import { StartScreen, GameOverScreen, AllFoundScreen } from '@/components/GameScreens';
 
-const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+const initialState: GameState = {
+  oxygen: 100,
+  discovered: [],
+  currentZone: 'Coral Reef',
+  depth: 0,
+  gameActive: false,
+  leviathanHealth: 100,
+  leviathanActive: false,
+  leviathanDefeated: false,
+  subY: 0,
+  worldH: 3000,
 };
 
-export default Index;
+export default function Index() {
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const gameRef = useRef<Phaser.Game | null>(null);
+  const sceneRef = useRef<OceanScene | null>(null);
+  const [gameState, setGameState] = useState<GameState>(initialState);
+  const [screen, setScreen] = useState<'start' | 'playing' | 'gameover' | 'allfound'>('start');
+
+  const handleStateChange = useCallback((state: GameState) => {
+    setGameState(state);
+    if (!state.gameActive && state.oxygen <= 0) {
+      setScreen('gameover');
+    } else if (state.discovered.length >= 8) {
+      setScreen('allfound');
+    }
+  }, []);
+
+  const startGame = useCallback(() => {
+    if (gameRef.current) {
+      gameRef.current.destroy(true);
+      gameRef.current = null;
+    }
+
+    const scene = new OceanScene();
+    sceneRef.current = scene;
+    scene.setStateCallback(handleStateChange);
+
+    const game = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: gameContainerRef.current!,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { x: 0, y: 0 },
+          debug: false,
+        },
+      },
+      scene: scene,
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+      },
+      render: {
+        pixelArt: false,
+        antialias: true,
+      },
+      backgroundColor: '#01111f',
+    });
+
+    gameRef.current = game;
+    setScreen('playing');
+  }, [handleStateChange]);
+
+  const restartGame = useCallback(() => {
+    if (sceneRef.current) {
+      sceneRef.current.resetGame();
+      setScreen('playing');
+    } else {
+      startGame();
+    }
+  }, [startGame]);
+
+  useEffect(() => {
+    return () => {
+      if (gameRef.current) {
+        gameRef.current.destroy(true);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="relative h-screen w-screen overflow-hidden bg-background">
+      <div ref={gameContainerRef} className="absolute inset-0" />
+
+      {screen === 'start' && <StartScreen onStart={startGame} />}
+      {screen === 'playing' && <GameHUD state={gameState} />}
+      {screen === 'gameover' && <GameOverScreen state={gameState} onRestart={restartGame} />}
+      {screen === 'allfound' && <AllFoundScreen state={gameState} onRestart={restartGame} />}
+    </div>
+  );
+}
