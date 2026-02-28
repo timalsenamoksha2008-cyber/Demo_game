@@ -35,39 +35,7 @@ export default function Index() {
     }
   }, []);
 
-  const startCutscene = useCallback(() => {
-    if (gameRef.current) {
-      gameRef.current.destroy(true);
-      gameRef.current = null;
-    }
-
-    const cutscene = new IntroCutscene();
-    cutscene.setCompleteCallback(() => {
-      // Transition from cutscene to game
-      if (gameRef.current) {
-        gameRef.current.destroy(true);
-        gameRef.current = null;
-      }
-      startOceanGame();
-    });
-
-    const game = new Phaser.Game({
-      type: Phaser.AUTO,
-      parent: gameContainerRef.current!,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      scene: cutscene,
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-      },
-      render: { pixelArt: false, antialias: true },
-      backgroundColor: '#1a1a2e',
-    });
-
-    gameRef.current = game;
-    setScreen('cutscene');
-  }, []);
+  const startOceanGameRef = useRef<() => void>();
 
   const startOceanGame = useCallback(() => {
     if (gameRef.current) {
@@ -86,16 +54,10 @@ export default function Index() {
       height: window.innerHeight,
       physics: {
         default: 'arcade',
-        arcade: {
-          gravity: { x: 0, y: 0 },
-          debug: false,
-        },
+        arcade: { gravity: { x: 0, y: 0 }, debug: false },
       },
       scene: scene,
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-      },
+      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
       render: { pixelArt: false, antialias: true },
       backgroundColor: '#01111f',
     });
@@ -103,6 +65,41 @@ export default function Index() {
     gameRef.current = game;
     setScreen('playing');
   }, [handleStateChange]);
+
+  startOceanGameRef.current = startOceanGame;
+
+  const startCutscene = useCallback(() => {
+    if (gameRef.current) {
+      gameRef.current.destroy(true);
+      gameRef.current = null;
+    }
+
+    const cutscene = new IntroCutscene();
+    cutscene.setCompleteCallback(() => {
+      if (gameRef.current) {
+        gameRef.current.destroy(true);
+        gameRef.current = null;
+      }
+      startOceanGameRef.current?.();
+    });
+
+    const game = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: gameContainerRef.current!,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      scene: cutscene,
+      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+      render: { pixelArt: false, antialias: true },
+      backgroundColor: '#1a1a2e',
+    });
+
+    gameRef.current = game;
+    setScreen('cutscene');
+  }, []);
+
+
+
 
   const restartGame = useCallback(() => {
     if (sceneRef.current) {
