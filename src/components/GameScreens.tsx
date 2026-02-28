@@ -27,8 +27,8 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
       <div className="animate-pop-in flex flex-col items-center gap-6 text-center">
         <div>
-          <h1 className="font-display text-6xl tracking-wider text-primary md:text-8xl">DEEP SEA</h1>
-          <h2 className="font-display text-4xl tracking-wider text-accent md:text-6xl">ESCAPE</h2>
+          <h1 className="font-display text-4xl tracking-wider text-primary md:text-8xl">BENEATH THE</h1>
+          <h2 className="font-display text-4xl tracking-wider text-accent md:text-6xl">OCEAN</h2>
           <p className="mt-1 font-body text-xs text-destructive">🧟 The dead walk. The ocean is your only hope.</p>
         </div>
 

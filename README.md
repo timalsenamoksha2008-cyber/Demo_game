@@ -1,4 +1,4 @@
-# Ocean Quest
+# Beneath the ocean
 
 ## What technologies are used for this project?
 
