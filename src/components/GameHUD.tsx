@@ -52,12 +52,30 @@ export default function GameHUD({ state }: GameHUDProps) {
         </div>
       </div>
 
+      {/* Surface Zombie Warning */}
+      {state.depth < 25 && state.gameActive && (
+        <div className="absolute left-1/2 top-14 -translate-x-1/2 animate-pulse rounded-lg bg-red-900/80 px-4 py-2 text-center border border-red-500">
+          <span className="font-display text-sm tracking-wider text-red-200">☣️ TOXIC SURFACE: ZOMBIES DETECTED! DIVE!</span>
+        </div>
+      )}
+
       {/* Health warning */}
-      {state.health < 25 && (
+      {state.health < 25 && state.depth >= 25 && (
         <div className="absolute left-1/2 top-14 -translate-x-1/2 animate-bounce rounded-lg bg-destructive/90 px-4 py-2 text-center">
           <span className="font-display text-sm tracking-wider text-destructive-foreground">⚠ HEALTH CRITICAL!</span>
         </div>
       )}
+
+      {/* Objective Tracker */}
+      <div className="absolute left-4 top-20 rounded-lg bg-background/60 p-3 backdrop-blur-sm border border-primary/30 max-w-[200px]">
+        <h3 className="font-display text-xs text-primary mb-2">OBJECTIVES</h3>
+        <ul className="font-body text-[10px] text-muted-foreground space-y-1">
+          <li className={state.depth > 25 ? "text-primary line-through" : ""}>1. Escape the Surface</li>
+          <li className={state.discovered.length === 8 ? "text-primary line-through" : ""}>2. Find 8 Creatures ({state.discovered.length}/8)</li>
+          <li className={state.leviathanDefeated ? "text-primary line-through" : state.leviathanActive ? "text-destructive blink" : ""}>3. Defeat Leviathan</li>
+          <li>4. Enter Sanctuary</li>
+        </ul>
+      </div>
 
       {/* Depth & Pressure indicator */}
       <div className="absolute right-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-2">
@@ -129,11 +147,10 @@ export default function GameHUD({ state }: GameHUDProps) {
         {CREATURES_INFO.map(c => (
           <div
             key={c.id}
-            className={`flex h-8 w-8 items-center justify-center rounded-full text-base transition-all ${
-              state.discovered.includes(c.id)
+            className={`flex h-8 w-8 items-center justify-center rounded-full text-base transition-all ${state.discovered.includes(c.id)
                 ? 'bg-primary/20 scale-100'
                 : 'bg-muted/20 scale-90 opacity-40 grayscale'
-            }`}
+              }`}
             title={c.name}
           >
             {c.emoji}

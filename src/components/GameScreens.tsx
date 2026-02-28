@@ -77,8 +77,12 @@ export function GameOverScreen({ state, onRestart }: GameOverScreenProps) {
     <div className="absolute inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-md">
       <div className="animate-pop-in flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-destructive/30 bg-card p-8 text-center"
         style={{ boxShadow: '0 0 60px hsla(0, 70%, 55%, 0.2)' }}>
-        <span className="text-5xl">💀</span>
-        <h2 className="font-display text-3xl text-destructive">HEALTH DEPLETED</h2>
+        <span className="text-5xl">{state.health <= 0 ? (state.depth < 30 ? '🧟' : '💀') : '💀'}</span>
+        <h2 className="font-display text-3xl text-destructive">
+          {state.health <= 0
+            ? (state.depth < 30 ? 'EATEN BY ZOMBIES' : (state.leviathanActive ? 'DESTROYED BY LEVIATHAN' : 'CRUSHED BY PRESSURE'))
+            : 'GAME OVER'}
+        </h2>
         <p className="font-body text-sm text-muted-foreground">
           You discovered {state.discovered.length} of 8 creatures
         </p>
@@ -116,19 +120,19 @@ export function AllFoundScreen({ state, onRestart }: AllFoundScreenProps) {
   return (
     <div className="absolute inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-md">
       <div className="animate-pop-in flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-accent/30 bg-card p-8 text-center"
-        style={{ boxShadow: '0 0 60px hsla(45, 100%, 70%, 0.2)' }}>
-        <span className="animate-spin text-5xl" style={{ animationDuration: '3s' }}>🏆</span>
-        <h2 className="font-display text-3xl text-accent">ALL CREATURES FOUND!</h2>
+        style={{ boxShadow: '0 0 60px hsla(170, 100%, 70%, 0.2)' }}>
+        <span className="animate-spin text-5xl" style={{ animationDuration: '3s' }}>🏰</span>
+        <h2 className="font-display text-3xl text-primary">SANCTUARY REACHED!</h2>
         <p className="font-body text-sm text-muted-foreground">
-          You discovered all 8 creatures{state.leviathanDefeated ? ' and defeated the Leviathan!' : '!'}
+          You gathered the bioluminescence of 8 sea creatures, defeated the Leviathan, and unlocked the safe haven free from the apocalypse!
         </p>
         <div className="flex flex-wrap justify-center gap-2 text-2xl">
           🐬 🦈 🐙 🪼 🐢 🪸 ⚓ 🐡
         </div>
         <button
           onClick={onRestart}
-          className="font-display w-full rounded-xl bg-accent px-6 py-3 text-lg tracking-widest text-accent-foreground transition-transform hover:-translate-y-1 active:translate-y-0"
-          style={{ boxShadow: '0 4px 0 hsl(45, 80%, 50%)' }}
+          className="font-display w-full rounded-xl bg-primary px-6 py-3 text-lg tracking-widest text-primary-foreground transition-transform hover:-translate-y-1 active:translate-y-0"
+          style={{ boxShadow: '0 4px 0 hsl(170, 80%, 30%)' }}
         >
           🌊 DIVE AGAIN
         </button>

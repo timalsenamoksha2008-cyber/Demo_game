@@ -64,6 +64,8 @@ export default class OceanScene extends Phaser.Scene {
   private lightShafts: Phaser.GameObjects.Graphics[] = [];
   private ventTimers: Phaser.Time.TimerEvent[] = [];
   private leviathanProjectiles: Phaser.GameObjects.Graphics[] = [];
+  private zombies: Phaser.GameObjects.Text[] = [];
+  private zombieTimer!: Phaser.Time.TimerEvent;
 
   constructor() {
     super({ key: 'OceanScene' });
@@ -144,6 +146,14 @@ export default class OceanScene extends Phaser.Scene {
       loop: true,
     });
 
+    // Zombie Spawning
+    this.zombieTimer = this.time.addEvent({
+      delay: 2000,
+      callback: this.spawnZombie,
+      callbackScope: this,
+      loop: true,
+    });
+
     this.emitState();
   }
 
@@ -176,10 +186,10 @@ export default class OceanScene extends Phaser.Scene {
     }
     g.setDepth(5);
 
-    this.surfaceText = this.add.text(WORLD_W / 2, SURFACE_Y - 40, '🫧 SURFACE — SAFE ZONE', {
+    this.surfaceText = this.add.text(WORLD_W / 2, SURFACE_Y - 40, '☢️ TOXIC SURFACE — DIVE TO ESCAPE', {
       fontFamily: 'Boogaloo',
       fontSize: '18px',
-      color: '#00d4b8',
+      color: '#ff4444',
       align: 'center',
     }).setOrigin(0.5).setAlpha(0.7).setDepth(6);
   }
@@ -480,6 +490,22 @@ export default class OceanScene extends Phaser.Scene {
     this.leviathanProjectiles.push(proj);
   }
 
+  private spawnZombie() {
+    if (!this.gameActive || !this.sub || this.sub.y > 1000) return;
+
+    // Spawn zombie around top of screen, biased towards player x
+    const x = Phaser.Math.Clamp(this.sub.x + (Math.random() - 0.5) * 800, 0, WORLD_W);
+    const y = SURFACE_Y + Math.random() * 50;
+
+    const zombieId = Math.random() > 0.5 ? '🧟' : '🧟‍♀️';
+    const zombie = this.add.text(x, y, zombieId, { fontSize: '32px' }).setOrigin(0.5).setDepth(7);
+
+    (zombie as any).vx = (Math.random() - 0.5) * 60;
+    (zombie as any).vy = 40 + Math.random() * 40;
+
+    this.zombies.push(zombie);
+  }
+
   private createSubmarine() {
     // Generate submarine texture
     const g = this.make.graphics({ x: 0, y: 0 });
@@ -769,6 +795,45 @@ export default class OceanScene extends Phaser.Scene {
       return true;
     });
 
+    // Zombies update
+    this.zombies = this.zombies.filter(z => {
+      z.x += (z as any).vx * (delta / 1000);
+      z.y += (z as any).vy * (delta / 1000);
+
+      // Chase player slightly
+      if (z.x < this.sub.x) (z as any).vx += 2;
+      else (z as any).vx -= 2;
+
+      // Hit player
+      const dist = Phaser.Math.Distance.Between(z.x, z.y, this.sub.x, this.sub.y);
+      if (dist < 50) {
+        this.health -= 5;
+        this.cameras.main.shake(100, 0.004);
+        // Blood effect
+        const blood = this.add.graphics();
+        blood.fillStyle(0xff0000, 0.6);
+        blood.fillCircle(z.x, z.y, 20);
+        blood.setDepth(11);
+        this.tweens.add({
+          targets: blood,
+          scale: 3,
+          alpha: 0,
+          duration: 500,
+          onComplete: () => blood.destroy()
+        });
+        z.destroy();
+        this.emitState();
+        return false;
+      }
+
+      // Despawn deep zombies
+      if (z.y > 1200) {
+        z.destroy();
+        return false;
+      }
+      return true;
+    });
+
     // Jellyfish sine movement
     const jf = this.creatureSprites.get('jellyfish');
     if (jf) {
@@ -805,54 +870,62 @@ export default class OceanScene extends Phaser.Scene {
 
   private discoverCreature(creature: Creature, sprite: Phaser.GameObjects.Text) {
     this.discovered.push(creature.id);
-    this.cameras.main.shake(200, 0.004);
-    this.cameras.main.flash(200, 0, 180, 255, true);
 
-    // Star burst
-    for (let i = 0; i < 12; i++) {
-      const star = this.add.text(sprite.x, sprite.y, '✦', {
-        fontSize: '18px',
-        color: '#ffd166',
-      }).setOrigin(0.5).setDepth(20);
-      const angle = (i / 12) * Math.PI * 2;
-      this.tweens.add({
-        targets: star,
-        x: sprite.x + Math.cos(angle) * 80,
-        y: sprite.y + Math.sin(angle) * 80,
-        alpha: 0,
-        duration: 800,
-        onComplete: () => star.destroy(),
-      });
-    }
-
-    // Scale pop
+    // Discovery effect
+    const g = this.add.graphics();
+    g.fillStyle(0xffffff, 0.8);
+    g.fillCircle(sprite.x, sprite.y, creature.radius);
+    g.setDepth(8);
     this.tweens.add({
-      targets: sprite,
-      scaleX: 2,
-      scaleY: 2,
-      duration: 300,
-      yoyo: true,
-      ease: 'Back.easeOut',
+      targets: g,
+      scaleX: 3,
+      scaleY: 3,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => g.destroy()
+    });
+
+    // Discovery text
+    const t = this.add.text(sprite.x, sprite.y - 80, `Found ${creature.name}!`, {
+      fontFamily: 'Boogaloo',
+      fontSize: '24px',
+      color: '#00d4b8'
+    }).setOrigin(0.5).setDepth(8);
+
+    this.tweens.add({
+      targets: t,
+      y: t.y - 50,
+      alpha: 0,
+      duration: 2500,
+      onComplete: () => t.destroy()
     });
 
     this.emitState();
+
+    // Check for win condition
+    if (this.discovered.length >= 8 && this.leviathanDefeated) {
+      this.gameActive = false;
+      this.emitState();
+    }
   }
 
   private defeatLeviathan() {
-    // Dramatic effect
-    this.cameras.main.shake(500, 0.01);
-    this.cameras.main.flash(500, 255, 50, 0, true);
+    this.cameras.main.flash(1000, 255, 255, 255);
+    this.cameras.main.shake(1500, 0.01);
 
-    // Leviathan sinks
     this.tweens.add({
       targets: this.leviathan,
-      y: WORLD_H + 200,
+      y: this.leviathan.y + 400,
       alpha: 0,
-      duration: 3000,
-      ease: 'Cubic.easeIn',
+      duration: 4000,
+      ease: 'Power2',
     });
 
-    this.emitState();
+    // Check for win condition
+    if (this.discovered.length >= 8) {
+      this.gameActive = false;
+      this.emitState();
+    }
   }
 
   resetGame() {
