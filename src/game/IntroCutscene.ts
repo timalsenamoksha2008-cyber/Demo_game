@@ -15,7 +15,9 @@ export default class IntroCutscene extends Phaser.Scene {
   private healthBg!: Phaser.GameObjects.Graphics;
   private healthText!: Phaser.GameObjects.Text;
   private isBoarding = false;
-  private subReached = false;
+  private isJumping = false;
+  private velocityY = 0;
+  private manBaseY = GROUND_Y - 25;
   private spawnTimer!: Phaser.Time.TimerEvent;
   private instructionText!: Phaser.GameObjects.Text;
   private waveNum = 0;
@@ -277,59 +279,67 @@ export default class IntroCutscene extends Phaser.Scene {
 
     const w = this.cameras.main.width;
     this.legPhase += delta * 0.01;
+    const dt = delta / 1000;
 
     // Player movement
     const speed = 4;
     let moveX = 0;
-    let jumped = false;
 
     if (this.cursors.left.isDown || this.wasd.A.isDown) moveX = -speed;
     if (this.cursors.right.isDown || this.wasd.D.isDown) moveX = speed;
-    if (this.cursors.up.isDown || this.wasd.W.isDown) jumped = true;
+
+    const wantJump = this.cursors.up.isDown || this.wasd.W.isDown;
 
     this.man.x += moveX;
-    // Clamp to screen
     this.man.x = Phaser.Math.Clamp(this.man.x, 20, w - 20);
 
-    // Running bob
-    if (moveX !== 0) {
-      this.man.y = GROUND_Y - 25 + Math.sin(this.legPhase * 4) * 3;
-      this.man.scaleX = moveX > 0 ? 1 : -1;
-    } else {
-      this.man.y = GROUND_Y - 25;
+    // Flip direction
+    if (moveX > 0) this.man.scaleX = 1;
+    else if (moveX < 0) this.man.scaleX = -1;
+
+    // Gravity-based jump
+    if (!this.isJumping && wantJump) {
+      this.isJumping = true;
+      this.velocityY = -420;
     }
 
-    // Jump (quick hop to dodge)
-    if (jumped && this.man.y >= GROUND_Y - 28) {
-      this.tweens.add({
-        targets: this.man,
-        y: GROUND_Y - 65,
-        duration: 250,
-        yoyo: true,
-        ease: 'Quad.easeOut',
-      });
+    if (this.isJumping) {
+      // Apply gravity
+      this.velocityY += 900 * dt;
+      this.man.y += this.velocityY * dt;
+
+      // Land on ground
+      if (this.man.y >= this.manBaseY) {
+        this.man.y = this.manBaseY;
+        this.isJumping = false;
+        this.velocityY = 0;
+      }
+    } else {
+      // Running bob only when on ground
+      if (moveX !== 0) {
+        this.man.y = this.manBaseY + Math.sin(this.legPhase * 4) * 3;
+      } else {
+        this.man.y = this.manBaseY;
+      }
     }
 
     // Zombie AI
     for (const z of this.zombies) {
       const dx = this.man.x - z.container.x;
       const dir = dx > 0 ? 1 : -1;
-      z.container.x += dir * z.speed * (delta / 1000);
+      z.container.x += dir * z.speed * dt;
       z.container.y = GROUND_Y - 25 + Math.sin(this.legPhase * 2 + z.speed) * 2;
       z.container.scaleX = dir;
 
-      // Collision with player
-      const dist = Math.abs(this.man.x - z.container.x);
+      // Collision — check x distance and whether player is near ground level
+      const xDist = Math.abs(this.man.x - z.container.x);
       const yDist = Math.abs(this.man.y - z.container.y);
-      if (dist < 25 && yDist < 30 && time - z.lastAttack > 800) {
+      if (xDist < 25 && yDist < 35 && time - z.lastAttack > 800) {
         z.lastAttack = time;
         this.health -= 8;
         this.drawHealthBar();
-
-        // Flash red
         this.cameras.main.flash(150, 255, 0, 0, false);
 
-        // Knockback
         const kb = this.man.x > z.container.x ? 30 : -30;
         this.tweens.add({ targets: this.man, x: this.man.x + kb, duration: 100 });
 
@@ -342,9 +352,9 @@ export default class IntroCutscene extends Phaser.Scene {
       }
     }
 
-    // Check submarine reach
-    const subDist = Phaser.Math.Distance.Between(this.man.x, this.man.y, this.submarine.x, this.submarine.y);
-    if (subDist < 60) {
+    // Check submarine reach — use x-distance only since sub is in the water below
+    const xToSub = Math.abs(this.man.x - this.submarine.x);
+    if (xToSub < 50) {
       this.boardSubmarine();
     }
   }
