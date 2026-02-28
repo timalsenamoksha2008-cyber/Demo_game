@@ -16,24 +16,25 @@ interface GameHUDProps {
 }
 
 export default function GameHUD({ state }: GameHUDProps) {
-  const oxygenColor = state.oxygen > 60 ? 'bg-primary' : state.oxygen > 30 ? 'bg-accent' : 'bg-destructive';
-  const oxygenCritical = state.oxygen < 30;
+  const healthColor = state.health > 60 ? 'bg-primary' : state.health > 30 ? 'bg-accent' : 'bg-destructive';
+  const healthCritical = state.health < 30;
+  const pressureLevel = state.pressure > 70 ? 'text-destructive' : state.pressure > 40 ? 'text-accent' : 'text-primary';
 
   return (
     <div className="pointer-events-none absolute inset-0 z-50">
       {/* Top bar */}
       <div className="absolute left-0 right-0 top-0 flex items-center justify-between px-4 py-3"
         style={{ background: 'linear-gradient(180deg, rgba(1,17,31,0.8) 0%, transparent 100%)' }}>
-        {/* Oxygen */}
+        {/* Health */}
         <div className="flex items-center gap-2">
-          <span className="text-lg">🫧</span>
-          <div className={`relative h-5 w-36 overflow-hidden rounded-full bg-muted ${oxygenCritical ? 'animate-pulse-red' : ''}`}>
+          <span className="text-lg">❤️</span>
+          <div className={`relative h-5 w-36 overflow-hidden rounded-full bg-muted ${healthCritical ? 'animate-pulse-red' : ''}`}>
             <div
-              className={`h-full rounded-full transition-all duration-500 ${oxygenColor}`}
-              style={{ width: `${Math.max(0, state.oxygen)}%` }}
+              className={`h-full rounded-full transition-all duration-500 ${healthColor}`}
+              style={{ width: `${Math.max(0, state.health)}%` }}
             />
             <span className="absolute inset-0 flex items-center justify-center font-body text-xs font-bold text-foreground">
-              {Math.round(state.oxygen)}%
+              {Math.round(state.health)}%
             </span>
           </div>
         </div>
@@ -51,14 +52,14 @@ export default function GameHUD({ state }: GameHUDProps) {
         </div>
       </div>
 
-      {/* Oxygen warning */}
-      {state.oxygen < 35 && state.subY > 180 && (
+      {/* Health warning */}
+      {state.health < 25 && (
         <div className="absolute left-1/2 top-14 -translate-x-1/2 animate-bounce rounded-lg bg-destructive/90 px-4 py-2 text-center">
-          <span className="font-display text-sm tracking-wider text-destructive-foreground">⬆ SURFACE FOR AIR!</span>
+          <span className="font-display text-sm tracking-wider text-destructive-foreground">⚠ HEALTH CRITICAL!</span>
         </div>
       )}
 
-      {/* Depth indicator */}
+      {/* Depth & Pressure indicator */}
       <div className="absolute right-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-2">
         <span className="font-body text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
           style={{ writingMode: 'vertical-rl' }}>DEPTH</span>
@@ -69,6 +70,26 @@ export default function GameHUD({ state }: GameHUDProps) {
           />
         </div>
         <span className="font-body text-[10px] text-muted-foreground">{state.depth}%</span>
+
+        {/* Water pressure */}
+        <div className="mt-2 flex flex-col items-center gap-1">
+          <span className="font-body text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+            style={{ writingMode: 'vertical-rl' }}>PRESSURE</span>
+          <div className="relative h-20 w-2 overflow-hidden rounded-full bg-muted/40">
+            <div
+              className="absolute bottom-0 w-full rounded-full bg-secondary transition-all duration-500"
+              style={{
+                height: `${state.pressure}%`,
+                background: state.pressure > 70
+                  ? 'hsl(var(--destructive))'
+                  : state.pressure > 40
+                    ? 'hsl(var(--accent))'
+                    : 'hsl(var(--primary))',
+              }}
+            />
+          </div>
+          <span className={`font-body text-[10px] font-bold ${pressureLevel}`}>{state.pressure}%</span>
+        </div>
       </div>
 
       {/* Leviathan health bar */}

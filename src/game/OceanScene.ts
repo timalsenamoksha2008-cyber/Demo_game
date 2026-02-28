@@ -43,7 +43,8 @@ export default class OceanScene extends Phaser.Scene {
   private creatureSprites: Map<string, Phaser.GameObjects.Text> = new Map();
   private creatureGlows: Map<string, Phaser.GameObjects.Graphics> = new Map();
   private discovered: string[] = [];
-  private oxygen = 100;
+  private health = 100;
+  private pressure = 0;
   private gameActive = true;
   private currentZone = 'Coral Reef';
   private darkOverlay!: Phaser.GameObjects.Graphics;
@@ -73,11 +74,14 @@ export default class OceanScene extends Phaser.Scene {
   }
 
   private emitState() {
+    const depthFrac = this.sub ? Math.max(0, (this.sub.y - SURFACE_Y) / (WORLD_H - SURFACE_Y)) : 0;
+    this.pressure = Math.round(depthFrac * 100);
     this.onStateChange?.({
-      oxygen: this.oxygen,
+      health: this.health,
+      pressure: this.pressure,
       discovered: [...this.discovered],
       currentZone: this.currentZone,
-      depth: this.sub ? Math.max(0, Math.round(((this.sub.y - SURFACE_Y) / (WORLD_H - SURFACE_Y)) * 100)) : 0,
+      depth: this.sub ? Math.max(0, Math.round(depthFrac * 100)) : 0,
       gameActive: this.gameActive,
       leviathanHealth: this.leviathanHealth,
       leviathanActive: this.leviathanActive,
@@ -124,10 +128,10 @@ export default class OceanScene extends Phaser.Scene {
       }
     });
 
-    // Oxygen drain timer
+    // Health drain timer
     this.time.addEvent({
       delay: 1000,
-      callback: this.drainOxygen,
+      callback: this.drainHealth,
       callbackScope: this,
       loop: true,
     });
@@ -172,7 +176,7 @@ export default class OceanScene extends Phaser.Scene {
     }
     g.setDepth(5);
 
-    this.surfaceText = this.add.text(WORLD_W / 2, SURFACE_Y - 40, '🫧 SURFACE — REFILL OXYGEN', {
+    this.surfaceText = this.add.text(WORLD_W / 2, SURFACE_Y - 40, '🫧 SURFACE — SAFE ZONE', {
       fontFamily: 'Boogaloo',
       fontSize: '18px',
       color: '#00d4b8',
@@ -561,16 +565,12 @@ export default class OceanScene extends Phaser.Scene {
     this.darkOverlay.setScrollFactor(0);
   }
 
-  private drainOxygen() {
+  private drainHealth() {
     if (!this.gameActive) return;
-    if (this.sub.y < SURFACE_Y) {
-      this.oxygen = Math.min(100, this.oxygen + 3);
-    } else {
-      const depthFrac = Math.min(1, (this.sub.y - SURFACE_Y) / (WORLD_H - SURFACE_Y));
-      this.oxygen -= 2 + depthFrac * 2;
-    }
-    if (this.oxygen <= 0) {
-      this.oxygen = 0;
+    // Slow constant health drain (not depth-based)
+    this.health -= 0.4;
+    if (this.health <= 0) {
+      this.health = 0;
       this.gameActive = false;
     }
     this.emitState();
@@ -714,7 +714,7 @@ export default class OceanScene extends Phaser.Scene {
     if (this.leviathanActive && !this.leviathanDefeated) {
       const ldist = Phaser.Math.Distance.Between(this.sub.x, this.sub.y, this.leviathan.x, this.leviathan.y);
       if (ldist < 120) {
-        this.oxygen -= 0.5;
+        this.health -= 0.5;
         this.cameras.main.shake(100, 0.003);
       }
     }
@@ -756,7 +756,7 @@ export default class OceanScene extends Phaser.Scene {
       p.y += (p as any).vy * (delta / 1000);
       const dist = Phaser.Math.Distance.Between(p.x, p.y, this.sub.x, this.sub.y);
       if (dist < 40) {
-        this.oxygen -= 8;
+        this.health -= 8;
         this.cameras.main.shake(150, 0.005);
         p.destroy();
         this.emitState();
@@ -857,7 +857,8 @@ export default class OceanScene extends Phaser.Scene {
 
   resetGame() {
     this.discovered = [];
-    this.oxygen = 100;
+    this.health = 100;
+    this.pressure = 0;
     this.gameActive = true;
     this.currentZone = 'Coral Reef';
     this.leviathanHealth = 100;
@@ -875,7 +876,8 @@ export default class OceanScene extends Phaser.Scene {
 }
 
 export interface GameState {
-  oxygen: number;
+  health: number;
+  pressure: number;
   discovered: string[];
   currentZone: string;
   depth: number;
