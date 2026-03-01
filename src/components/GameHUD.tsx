@@ -39,6 +39,20 @@ export default function GameHUD({ state }: GameHUDProps) {
           </div>
         </div>
 
+        {/* Sonic Pulse */}
+        <div className="flex items-center gap-2">
+          <span className="text-lg animate-pulse" style={{ color: state.sonicPulseCharge >= 100 ? '#00d4b8' : '#4a90d9' }}>◎</span>
+          <div className="h-2 w-16 overflow-hidden rounded-full bg-muted/60 border border-primary/20">
+            <div className="h-full bg-[#00d4b8] transition-all" style={{ width: `${state.sonicPulseCharge}%` }} />
+          </div>
+        </div>
+
+        {/* Ammo */}
+        <div className="flex items-center gap-2">
+          <span className="text-lg">⚓</span>
+          <span className="font-display text-lg text-primary">{state.torpedoAmmo}</span>
+        </div>
+
         {/* Zone */}
         <div className="rounded-lg border border-primary/40 bg-background/60 px-4 py-1">
           <span className="font-display text-sm tracking-wider text-primary">{state.currentZone}</span>
@@ -52,10 +66,10 @@ export default function GameHUD({ state }: GameHUDProps) {
         </div>
       </div>
 
-      {/* Surface Zombie Warning */}
+      {/* Surface Warning */}
       {state.depth < 25 && state.gameActive && (
         <div className="absolute left-1/2 top-14 -translate-x-1/2 animate-pulse rounded-lg bg-red-900/80 px-4 py-2 text-center border border-red-500">
-          <span className="font-display text-sm tracking-wider text-red-200">☣️ TOXIC SURFACE: ZOMBIES DETECTED! DIVE!</span>
+          <span className="font-display text-sm tracking-wider text-red-200">☣️ TOXIC SURFACE: DIVE NOW!</span>
         </div>
       )}
 
@@ -67,13 +81,14 @@ export default function GameHUD({ state }: GameHUDProps) {
       )}
 
       {/* Objective Tracker */}
-      <div className="absolute left-4 top-20 rounded-lg bg-background/60 p-3 backdrop-blur-sm border border-primary/30 max-w-[200px]">
-        <h3 className="font-display text-xs text-primary mb-2">OBJECTIVES</h3>
+      <div className="absolute right-4 top-4 rounded-xl border border-primary/20 bg-background/80 p-4 shadow-lg backdrop-blur-sm">
+        <h3 className="font-display text-xs tracking-widest text-primary/80 mb-2">OBJECTIVES / SCANS</h3>
         <ul className="font-body text-[10px] text-muted-foreground space-y-1">
-          <li className={state.depth > 25 ? "text-primary line-through" : ""}>1. Escape the Surface</li>
-          <li className={state.discovered.length === 8 ? "text-primary line-through" : ""}>2. Find 8 Creatures ({state.discovered.length}/8)</li>
-          <li className={state.leviathanDefeated ? "text-primary line-through" : state.leviathanActive ? "text-destructive blink" : ""}>3. Defeat Leviathan</li>
-          <li>4. Enter Sanctuary</li>
+          <li className={state.depth > 25 ? "text-primary line-through" : ""}>1. Escape Toxic Surface</li>
+          <li className={state.journalsCollected?.length >= 4 ? "text-primary line-through" : ""}>2. Recover Lost PDAs ({state.journalsCollected?.length || 0}/4)</li>
+          <li className={state.discovered.length === 8 ? "text-primary line-through" : ""}>3. Scan Marine Life ({state.discovered.length}/8)</li>
+          <li className={state.leviathanDefeated ? "text-primary line-through" : state.leviathanActive ? "text-destructive blink" : ""}>4. Defeat The Kraken</li>
+          <li className={state.leviathanDefeated && state.depth > 7900 ? "text-primary line-through" : ""}>5. Enter Sanctuary Cave</li>
         </ul>
       </div>
 
@@ -114,7 +129,7 @@ export default function GameHUD({ state }: GameHUDProps) {
       {state.leviathanActive && !state.leviathanDefeated && (
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 animate-fade-in-up">
           <div className="flex flex-col items-center gap-1">
-            <span className="font-display text-sm tracking-wider text-destructive">🐉 LEVIATHAN</span>
+            <span className="font-display text-sm tracking-wider text-destructive">🦑 THE KRAKEN</span>
             <div className="h-3 w-48 overflow-hidden rounded-full bg-muted/60">
               <div
                 className="h-full rounded-full bg-destructive transition-all duration-300"
@@ -129,7 +144,7 @@ export default function GameHUD({ state }: GameHUDProps) {
       {/* Leviathan defeated */}
       {state.leviathanDefeated && (
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 animate-bounce-in">
-          <span className="font-display text-lg text-accent">🏆 LEVIATHAN DEFEATED!</span>
+          <span className="font-display text-lg text-accent">🏆 THE KRAKEN DEFEATED!</span>
         </div>
       )}
 
@@ -148,8 +163,8 @@ export default function GameHUD({ state }: GameHUDProps) {
           <div
             key={c.id}
             className={`flex h-8 w-8 items-center justify-center rounded-full text-base transition-all ${state.discovered.includes(c.id)
-                ? 'bg-primary/20 scale-100'
-                : 'bg-muted/20 scale-90 opacity-40 grayscale'
+              ? 'bg-primary/20 scale-100'
+              : 'bg-muted/20 scale-90 opacity-40 grayscale'
               }`}
             title={c.name}
           >

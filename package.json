@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "package:itch": "npm run build && powershell -Command \"Compress-Archive -Path dist/* -DestinationPath game.zip\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
